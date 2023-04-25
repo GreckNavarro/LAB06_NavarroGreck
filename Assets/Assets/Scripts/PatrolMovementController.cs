@@ -12,9 +12,16 @@ public class PatrolMovementController : MonoBehaviour
     private Transform currentPositionTarget;
     private int patrolPos = 0;
 
+    [SerializeField] float raycastDistance = 5f;
+    [SerializeField] LayerMask layerInteraction;
+    private float fastVelocity = 0f;
+    private float normalVelocity = 0f;
+
     private void Start() {
         currentPositionTarget = checkpointsPatrol[patrolPos];
         transform.position = currentPositionTarget.position;
+        normalVelocity = velocityModifier;
+        fastVelocity = velocityModifier + 2.5f;
     }
 
     private void Update() {
@@ -25,12 +32,31 @@ public class PatrolMovementController : MonoBehaviour
 
     private void CheckNewPoint(){
         if(Mathf.Abs((transform.position - currentPositionTarget.position).magnitude) < 0.25){
+            transform.position = currentPositionTarget.position;
             patrolPos = patrolPos + 1 == checkpointsPatrol.Length? 0: patrolPos+1;
             currentPositionTarget = checkpointsPatrol[patrolPos];
             myRBD2.velocity = (currentPositionTarget.position - transform.position).normalized*velocityModifier;
             CheckFlip(myRBD2.velocity.x);
+            
+
         }
-        
+
+        Vector2 distanceTarget = currentPositionTarget.position - transform.position;
+        RaycastHit2D hit2D = Physics2D.Raycast(transform.position, distanceTarget, raycastDistance, layerInteraction);
+
+        if (hit2D)
+        {
+            if (hit2D.collider.CompareTag("Player"))
+            {
+                velocityModifier = fastVelocity;
+            }
+            else
+            {
+                velocityModifier = normalVelocity;
+            }
+        }
+        myRBD2.velocity = (currentPositionTarget.position - transform.position).normalized * velocityModifier;
+        Debug.DrawRay(transform.position, currentPositionTarget.position - transform.position, Color.cyan);
     }
 
     private void CheckFlip(float x_Position){
